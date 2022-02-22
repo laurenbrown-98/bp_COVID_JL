@@ -4,6 +4,7 @@
 
 library(bpmodels)
 library(tidyverse)
+library(lubridate)
 
 # Parameters
 mu_nb = 2
@@ -11,17 +12,17 @@ size_nb = 2
 proj_window = 14
 last_av_date = as.Date("2020-03-13")
 
-# dd <- data.frame(names = c(date, timestep)
 
-# data frame of input data
-input_data <- data.frame(names = c(date, cases, timestep))
+## importing data
 
-# vector of initial start times for each chain
-start_times = c()
-# should it not be: for(i in 1:nrow(input_data))
-for(i=1:nrow(input_data)){
-start_times = c(start_times, rep(input_data[i,"timestep"], input_data[i, "cases"]))
-}
+dd_firstcases_raw <- read.csv('https://raw.githubusercontent.com/dsfsi/covid19za/master/data/covid19za_timeline_confirmed.csv', header = TRUE)
+firstdate = '2020-03-05'
+dd_firstcases <- (dd_firstcases_raw 
+		  %>% select(case_id, date)
+		  %>% mutate(date = dmy(date))
+		  %>% mutate(ts = yday(date) - yday(firstdate) + 1)
+		  %>% filter(date <= last_av_date)
+)
 
 #serial interval log-normally distributed with mean = 4.7, sd = 2.9
 si <- function(n){
@@ -29,6 +30,6 @@ return(rlnorm(n, meanlog = 4.7, sdlog = 2.9))
 }
 
 # simulate a chain
-tmp <- chain_sim(n = length(start_times), offspring = 'nbinom', mu = 2, size = 0.38, serial = si, tf = 26, t0 = start_times)
+tmp <- chain_sim(n = nrow(dd_firstcases), offspring = 'nbinom', mu = 2, size = 0.38, serial = si, tf = 27, t0 = dd_firstcases$ts)
 
 print(tmp)
