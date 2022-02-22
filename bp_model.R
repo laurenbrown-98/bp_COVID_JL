@@ -5,6 +5,7 @@
 library(bpmodels)
 library(tidyverse)
 library(lubridate)
+library(ggplot2)
 
 ## parameters
 mu_nb = 2
@@ -26,7 +27,7 @@ dd_firstcases <- (dd_firstcases_raw
 
 ## serial interval log-normally distributed with mean = 4.7, sd = 2.9
 si <- function(n){
-return(rlnorm(n, meanlog = 4.7, sdlog = 2.9))
+return(rlnorm(n, meanlog = log(4.7), sdlog = log(2.9)))
 }
 
 dd_sims <- data.frame(time = c(), cases = c(), sim = c())
@@ -46,8 +47,26 @@ ts_tmp <- (tmp %>% mutate(time = floor(time))
 	       %>% mutate(sim = i) 
 )
 
-dd_sims = rbind(dd_output, ts_tmp)
+dd_sims = rbind(dd_sims, ts_tmp)
 
 }
 
-print(dd_sims)
+# making median time series
+
+dd_out <-(dd_sims 
+	  %>% group_by(time)
+	  %>% summarise(cases_med = median(cases))
+	  %>% mutate(date = as.Date('2020-03-05') + time - 1 )
+)	  
+
+print(dd_out)
+write.csv(dd_out, file = "ts_sim.csv")
+
+# making plot
+plot1 <- ggplot(data = dd_out, aes(x = date, y = cases_med)) +
+	geom_point()
+ggsave(plot = plot1,
+       filename = "bp_forecast.jpeg",
+	device = "jpeg")
+
+
