@@ -8,11 +8,14 @@ library(lubridate)
 library(ggplot2)
 
 ## parameters
-mu_nb = 2
-size_nb = 2
 proj_window = 14
 last_av_date = as.Date("2020-03-13")
 nsims = 5
+meanlog_si = log(4.7)
+sdlog_si = log(2.9)
+offspring_mean = 2
+offspring_dispersion = 0.38
+
 
 ## import data
 
@@ -25,9 +28,12 @@ dd_firstcases <- (dd_firstcases_raw
 		  %>% filter(date <= last_av_date)
 )
 
+projection_start = max(dd_firstcases$ts)
+projection_finish = projection_start + proj_window
+
 ## serial interval log-normally distributed with mean = 4.7, sd = 2.9
 si <- function(n){
-return(rlnorm(n, meanlog = log(4.7), sdlog = log(2.9)))
+return(rlnorm(n, meanlog = meanlog_si, sdlog = sdlog_si))
 }
 
 dd_sims <- data.frame(time = c(), cases = c(), sim = c())
@@ -35,7 +41,7 @@ dd_sims <- data.frame(time = c(), cases = c(), sim = c())
 for(i in 1:nsims){
 
 ## simulate a chain
-tmp <- chain_sim(n = nrow(dd_firstcases), offspring = 'nbinom', mu = 2, size = 0.38, serial = si, tf = 27, t0 = dd_firstcases$ts)
+tmp <- chain_sim(n = nrow(dd_firstcases), offspring = 'nbinom', mu = offspring_mean, size = offspring_dispersion, serial = si, tf = projection_finish, t0 = dd_firstcases$ts)
 
 ## print(tmp)
 
