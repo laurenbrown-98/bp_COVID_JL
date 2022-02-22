@@ -6,14 +6,14 @@ library(bpmodels)
 library(tidyverse)
 library(lubridate)
 
-# Parameters
+## parameters
 mu_nb = 2
 size_nb = 2
 proj_window = 14
 last_av_date = as.Date("2020-03-13")
+nsims = 5
 
-
-## importing data
+## import data
 
 dd_firstcases_raw <- read.csv('https://raw.githubusercontent.com/dsfsi/covid19za/master/data/covid19za_timeline_confirmed.csv', header = TRUE)
 firstdate = '2020-03-05'
@@ -24,12 +24,30 @@ dd_firstcases <- (dd_firstcases_raw
 		  %>% filter(date <= last_av_date)
 )
 
-#serial interval log-normally distributed with mean = 4.7, sd = 2.9
+## serial interval log-normally distributed with mean = 4.7, sd = 2.9
 si <- function(n){
 return(rlnorm(n, meanlog = 4.7, sdlog = 2.9))
 }
 
-# simulate a chain
+dd_sims <- data.frame(time = c(), cases = c(), sim = c())
+
+for(i in 1:nsims){
+
+## simulate a chain
 tmp <- chain_sim(n = nrow(dd_firstcases), offspring = 'nbinom', mu = 2, size = 0.38, serial = si, tf = 27, t0 = dd_firstcases$ts)
 
-print(tmp)
+## print(tmp)
+
+## create a time series 
+
+ts_tmp <- (tmp %>% mutate(time = floor(time))
+	       %>% group_by(time) 
+	       %>% summarise(cases = n())
+	       %>% mutate(sim = i) 
+)
+
+dd_sims = rbind(dd_output, ts_tmp)
+
+}
+
+print(dd_sims)
