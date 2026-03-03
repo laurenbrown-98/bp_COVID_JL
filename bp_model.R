@@ -22,7 +22,7 @@ dd_firstcases_raw <- read.csv('https://raw.githubusercontent.com/dsfsi/covid19za
 
 proj_window = 14                         # project 14 days into the future
 last_av_date = as.Date("2020-03-13")     # only use observed cases up to 13 March 2020
-nsims = 10                              # number of simulations
+nsims = 10                               # number of simulations
 m = 4.7; s = 2.9                         # mean & std of lognormal serial interval distribution 
 offspring_mean = 2                       # mean of offspring distribution - on average each case causes 2 secondary cases
 offspring_dispersion = 0.38              # dispersion parameter of offspring distribution - controls heterogeneity of transmission
@@ -37,7 +37,6 @@ dd_firstcases <- (dd_firstcases_raw
 )
 
 ## View the raw data
-
 dd_daily <- dd_firstcases %>%
   group_by(date) %>%
   summarise(cases = n(), .groups = "drop")
@@ -55,6 +54,9 @@ ggplot(dd_daily, aes(x = date, y = cases)) +
     plot.title = element_text(face = "bold"),
     panel.grid.minor = element_blank()
   )
+
+projection_start = max(dd_firstcases$ts)
+projection_finish = projection_start + proj_window
 
 ## Generate the serial interval distribution
 sigma2 <- log(1 + (s^2 / m^2))
@@ -106,8 +108,7 @@ dd_out <- dd_sims %>%
   mutate(date = as.Date("2020-03-05") + time - 1)
 
 print(dd_out)
-write.csv(dd_out, file = "ts_sim.csv")
-
+#write.csv(dd_out, file = "ts_sim.csv")
 
 chains_plt <- ggplot(dd_out, aes(x = date)) +
   # Uncertainty ribbon
